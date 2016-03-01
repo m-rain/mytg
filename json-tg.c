@@ -84,9 +84,9 @@ void json_pack_chat (json_t *res, tgl_peer_t *P) {
 void json_pack_channel (json_t *res, tgl_peer_t *P) {
   assert (P->channel.title);
   assert (json_object_set (res, "title", json_string (P->channel.title)) >= 0);
+  // assert (json_object_set (res, "user_name", json_string (P->channel.username)) >= 0);
   assert (json_object_set (res, "participants_count", json_integer (P->channel.participants_count)) >= 0);
   assert (json_object_set (res, "admins_count", json_integer (P->channel.admins_count)) >= 0);
-  assert (json_object_set (res, "kicked_count", json_integer (P->channel.kicked_count)) >= 0);
 }
 
 
@@ -439,6 +439,10 @@ json_t *json_pack_message (struct tgl_message *M) {
 
   if (M->flags & TGLMF_MENTION) {
     assert (json_object_set (res, "mention", json_true ()) >= 0);
+  }
+
+  if (M->views) {
+    assert (json_object_set (res, "views", json_integer (M->views)) >= 0);
   }
  
   assert (json_object_set (res, "from", json_pack_peer (M->from_id)) >= 0);

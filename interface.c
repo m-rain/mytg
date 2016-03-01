@@ -1399,6 +1399,12 @@ void do_leave_channel (struct command *command, int arg_num, struct arg args[], 
   tgl_do_leave_channel (TLS, args[0].peer_id, print_success_gw, ev);
 }
 
+void do_delete_channel (struct command *command, int arg_num, struct arg args[], struct in_ev *ev) {
+  assert (arg_num == 1);
+  if (ev) { ev->refcnt ++; }
+  tgl_do_delete_channel (TLS, args[0].peer_id, print_success_gw, ev);
+}
+
 void do_export_channel_link (struct command *command, int arg_num, struct arg args[], struct in_ev *ev) {
   assert (arg_num == 1);
   if (ev) { ev->refcnt ++; }
@@ -1594,6 +1600,11 @@ void do_delete_msg (struct command *command, int arg_num, struct arg args[], str
   tgl_do_delete_msg (TLS, &args[0].msg_id, print_success_gw, ev);
 }
 
+void do_view_msg (struct command *command, int arg_num, struct arg args[], struct in_ev *ev) {
+  if (ev) { ev->refcnt ++; }
+  tgl_do_view_msg (TLS, &args[0].msg_id, print_card_gw, ev);
+}
+
 void do_get_message (struct command *command, int arg_num, struct arg args[], struct in_ev *ev) {
   assert (arg_num == 1);
   if (ev) { ev->refcnt ++; }
@@ -1661,6 +1672,7 @@ struct command commands[MAX_COMMANDS_SIZE] = {
   {"channel_info", {ca_channel, ca_none}, do_channel_info, "channel_info <channel>\tPrints info about channel (id, members, admin, etc.)", NULL},
   {"channel_invite", {ca_channel, ca_user, ca_none}, do_channel_invite, "channel_invite <channel> <user>\tInvites user to channel", NULL},
   {"channel_join", {ca_channel, ca_none}, do_join_channel, "channel_join <channel>\tJoins to channel", NULL},
+  {"channel_delete", {ca_channel, ca_none}, do_delete_channel, "channel_delete <channel>\tdeletes the channel when you are owner", NULL},
   {"channel_kick", {ca_channel, ca_user, ca_none}, do_channel_kick, "channel_kick <channel> <user>\tKicks user from channel", NULL},
   {"channel_leave", {ca_channel, ca_none}, do_leave_channel, "channel_leave <channel>\tLeaves from channel", NULL},
   {"channel_list", {ca_number | ca_optional, ca_number | ca_optional, ca_none}, do_channel_list, "channel_list [limit=100] [offset=0]\tList of last channels", NULL},
@@ -1682,6 +1694,7 @@ struct command commands[MAX_COMMANDS_SIZE] = {
   {"create_secret_chat", {ca_user, ca_none}, do_create_secret_chat, "create_secret_chat <user>\tStarts creation of secret chat", NULL},
   {"del_contact", {ca_user, ca_none}, do_del_contact, "del_contact <user>\tDeletes contact from contact list", NULL},
   {"delete_msg", {ca_msg_id, ca_none}, do_delete_msg, "delete_msg <msg-id>\tDeletes message", NULL},
+  {"view_msg", {ca_msg_id, ca_none}, do_view_msg, "view_msg <msg-id>\tviews message", NULL},
   {"dialog_list", {ca_number | ca_optional, ca_number | ca_optional, ca_none}, do_dialog_list, "dialog_list [limit=100] [offset=0]\tList of last conversations", NULL},
   {"export_card", {ca_none}, do_export_card, "export_card\tPrints card that can be imported by another user with import_card method", NULL},
   {"export_channel_link", {ca_channel, ca_none}, do_export_channel_link, "export_channel_link\tPrints channel link that can be used to join to channel", NULL},
@@ -2690,6 +2703,7 @@ void print_channel_info_gw (struct tgl_state *TLSR, void *extra, int success, st
   } else {
     #ifdef USE_JSON
       json_t *res = json_pack_peer (C->id);
+      assert (json_object_set (res, "about", json_string (C->about)) >= 0);
       char *s = json_dumps (res, 0);
       mprintf (ev, "%s\n", s);
       json_decref (res);
@@ -4439,6 +4453,9 @@ void print_message (struct in_ev *ev, struct tgl_message *M) {
   }
   if (M->message && strlen (M->message)) {
     mprintf (ev, "%s", M->message);
+  }
+  if (M->views) {
+    mprintf (ev, "%d", M->views);
   }
   if (M->media.type != tgl_message_media_none) {
     if (M->message && strlen (M->message)) {

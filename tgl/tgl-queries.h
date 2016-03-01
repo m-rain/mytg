@@ -191,6 +191,8 @@ void tgl_do_join_channel (struct tgl_state *TLS, tgl_peer_id_t id, void (*callba
 
 void tgl_do_leave_channel (struct tgl_state *TLS, tgl_peer_id_t id, void (*callback)(struct tgl_state *TLS, void *callback_extra, int success), void *callback_extra);
 
+void tgl_do_delete_channel (struct tgl_state *TLS, tgl_peer_id_t id, void (*callback)(struct tgl_state *TLS, void *callback_extra, int success), void *callback_extra);
+
 void tgl_do_channel_invite_user (struct tgl_state *TLS, tgl_peer_id_t channel_id, tgl_peer_id_t id, void (*callback)(struct tgl_state *TLS, void *callback_extra, int success), void *callback_extra);
 
 void tgl_do_channel_kick_user (struct tgl_state *TLS, tgl_peer_id_t channel_id, tgl_peer_id_t id, void (*callback)(struct tgl_state *TLS, void *callback_extra, int success), void *callback_extra);
@@ -270,6 +272,9 @@ void tgl_do_msg_search (struct tgl_state *TLS, tgl_user_or_chat_id_t id, int fro
 
 // deletes message *id*
 void tgl_do_delete_msg (struct tgl_state *TLS, tgl_message_id_t *msg_id, void (*callback)(struct tgl_state *TLS, void *callback_extra, int success), void *callback_extra);
+
+// add view to message *id*
+void tgl_do_view_msg (struct tgl_state *TLS, tgl_message_id_t *msg_id, void (*callback)(struct tgl_state *TLS, void *callback_extra, int success, int size, int *card), void *callback_extra);
 
 // gets message by *id*
 void tgl_do_get_message (struct tgl_state *TLS, tgl_message_id_t *msg_id, void (*callback)(struct tgl_state *TLS, void *callback_extra, int success, struct tgl_message *M), void *callback_extra);

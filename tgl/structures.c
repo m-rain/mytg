@@ -1174,6 +1174,7 @@ struct tgl_message *tglf_fetch_alloc_message_short (struct tgl_state *TLS, struc
     NULL,
     DS_U->reply_to_msg_id,
     NULL, 
+    0,
     (void *)DS_U->entities,
     flags
   );
@@ -1246,6 +1247,7 @@ struct tgl_message *tglf_fetch_alloc_message_short_chat (struct tgl_state *TLS, 
     NULL,
     DS_U->reply_to_msg_id,
     NULL,
+    0,
     NULL,
     flags
   );
@@ -1583,6 +1585,9 @@ struct tgl_message *tglf_fetch_alloc_message (struct tgl_state *TLS, struct tl_d
     if (DS_LVAL (DS_M->flags) & 16) {
       flags |= TGLMF_MENTION;
     }
+    // if (DS_LVAL (DS_M->flags) & 1024) {
+    //   flags |= TGLMF_MSG_VIEW;
+    // }
   
     tgl_peer_id_t from_id;
     if (DS_M->from_id) {
@@ -1611,6 +1616,7 @@ struct tgl_message *tglf_fetch_alloc_message (struct tgl_state *TLS, struct tl_d
       DS_M->action,
       DS_M->reply_to_msg_id,
       DS_M->reply_markup,
+      DS_M->views,
       (void *)DS_M->entities,
       flags | TGLMF_CREATE | TGLMF_CREATED
     );

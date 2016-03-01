@@ -30,6 +30,7 @@
 #define TGLMF_OUT 2
 #define TGLMF_DISABLE_PREVIEW 4
 #define TGLMF_MENTION 16
+#define TGLMF_MSG_VIEW 1024
 #define TGLMF_CREATED (1 << 8)
 #define TGLMF_PENDING (1 << 9)
 #define TGLMF_DELETED (1 << 10)
@@ -629,6 +630,7 @@ struct tgl_message {
   tgl_peer_id_t to_id;
   int date;
   struct tgl_message_reply_markup *reply_markup;
+  int views;
   int entities_num;
   struct tgl_message_entity *entities;
   union {

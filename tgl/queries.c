@@ -1208,7 +1208,7 @@ void tgl_do_send_message (struct tgl_state *TLS, tgl_peer_id_t peer_id, const ch
     }
 
       
-    bl_do_edit_message (TLS, &id, &from_id, &peer_id, NULL, NULL, &date, text, text_len, &TDSM, NULL, reply ? &reply : NULL, reply_markup, EN, TGLMF_UNREAD | TGLMF_OUT | TGLMF_PENDING | TGLMF_CREATE | TGLMF_CREATED | TGLMF_SESSION_OUTBOUND | disable_preview);
+    bl_do_edit_message (TLS, &id, &from_id, &peer_id, NULL, NULL, &date, text, text_len, &TDSM, NULL, reply ? &reply : NULL, reply_markup, 0, EN, TGLMF_UNREAD | TGLMF_OUT | TGLMF_PENDING | TGLMF_CREATE | TGLMF_CREATED | TGLMF_SESSION_OUTBOUND | disable_preview);
     
     if (flags & TGLMF_HTML) {
       tfree_str (new_text);
@@ -2751,6 +2751,19 @@ void tgl_do_leave_channel (struct tgl_state *TLS, tgl_peer_id_t id, void (*callb
 }
 /* }}} */
 
+/* {{{ Delete channel */
+
+void tgl_do_delete_channel (struct tgl_state *TLS, tgl_peer_id_t id, void (*callback)(struct tgl_state *TLS, void *callback_extra, int success), void *callback_extra) {
+  clear_packet ();
+  out_int (CODE_channels_delete_channel);
+  assert (tgl_get_peer_type (id) == TGL_PEER_CHANNEL);
+  out_int (CODE_input_channel);
+  out_int (tgl_get_peer_id (id));
+  out_long (id.access_hash);
+  tglq_send_query (TLS, TLS->DC_working, packet_ptr - packet_buffer, packet_buffer, &send_msgs_methods, 0, callback, callback_extra);
+}
+/* }}} */
+
 /* {{{ channel change about */
 
 static int channels_set_about_on_answer (struct tgl_state *TLS, struct query *q, void *D) {
@@ -4164,6 +4177,70 @@ void tgl_do_delete_msg (struct tgl_state *TLS, tgl_message_id_t *_msg_id, void (
 }
 /* }}} */
 
+/* {{{ view msg */
+
+static int view_msg_on_answer (struct tgl_state *TLS, struct query *q, void *D) {
+  struct tl_ds_vector *DS_V = D;
+
+  int n = DS_LVAL (DS_V->f1);
+
+  int *r = talloc (4 * n);
+  int i;
+  for (i = 0; i < n; i++) {
+    r[i] = *(int *)DS_V->f2[i];
+  }
+
+  if (q->callback) {
+    ((void (*)(struct tgl_state *, void *, int, int, int *))q->callback) (TLS, q->callback_extra, 1, n, r);
+  }
+  tfree (r, 4 * n);
+  return 0;
+}
+
+static struct query_methods view_msg_methods = {
+  .on_answer = view_msg_on_answer,
+  .on_error = q_list_on_error,
+  .type = TYPE_TO_PARAM_1(vector, TYPE_TO_PARAM (bare_int)),
+  .name = "view_msg"
+};
+
+void tgl_do_view_msg (struct tgl_state *TLS, tgl_message_id_t *_msg_id, void (*callback)(struct tgl_state *TLS, void *callback_extra, int success, int size, int *card), void *callback_extra) {
+  tgl_message_id_t msg_id = *_msg_id;
+  if (msg_id.peer_type == TGL_PEER_TEMP_ID) {
+    msg_id = tgl_convert_temp_msg_id (TLS, msg_id);
+  }
+  // if (msg_id.peer_type == TGL_PEER_TEMP_ID) {
+  //   tgl_set_query_error (TLS, EINVAL, "unknown message");
+  //   if (callback) {
+  //     callback (TLS, callback_extra, 0);
+  //   }
+  //   return;
+  // }
+  clear_packet ();
+
+  // out_int (CODE_messages_read_message_contents);
+  // out_int (CODE_vector);
+  // out_int (1);
+  // out_int (msg_id.id);
+
+  out_int (CODE_messages_get_messages_views);
+
+  out_int (CODE_input_peer_channel);
+  out_int (msg_id.peer_id);
+  out_long (msg_id.access_hash);
+
+  out_int (CODE_vector);
+  out_int (1);
+  out_int (msg_id.id);
+  
+  out_int (CODE_bool_true);
+
+  tgl_message_id_t *id = talloc (sizeof (*id));
+  *id = msg_id;
+  tglq_send_query (TLS, TLS->DC_working, packet_ptr - packet_buffer, packet_buffer, &view_msg_methods, id, callback, callback_extra);
+}
+/* }}} */
+
 /* {{{ Export card */
 
 static int export_card_on_answer (struct tgl_state *TLS, struct query *q, void *D) {
@@ -4846,7 +4923,7 @@ void tgl_do_send_broadcast (struct tgl_state *TLS, int num, tgl_peer_id_t peer_i
     E->list[i] = id;
 
     tgl_peer_id_t from_id = TLS->our_id;
-    bl_do_edit_message (TLS, &id, &from_id, &peer_id[i], NULL, NULL, &date, text, text_len, &TDSM, NULL, NULL, NULL, NULL, TGLMF_UNREAD | TGLMF_OUT | TGLMF_PENDING | TGLMF_CREATE | TGLMF_CREATED | disable_preview);
+    bl_do_edit_message (TLS, &id, &from_id, &peer_id[i], NULL, NULL, &date, text, text_len, &TDSM, NULL, NULL, NULL, 0, NULL, TGLMF_UNREAD | TGLMF_OUT | TGLMF_PENDING | TGLMF_CREATE | TGLMF_CREATED | disable_preview);
   }
 
   clear_packet ();
